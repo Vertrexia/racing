@@ -1,39 +1,455 @@
 <?php
+if (!defined(__ROOT__))
+	return;
 
-//	class decleration variables
-$players 	= null;		//	holds the list of players in server
-$timer		= null;		//	timer of the game
-$records	= null;		//	holds the list of records of players
-$queuers	= null;		//	queuers and their list
-$rotation 	= null;		//	for rotation
-$zones		= null;		//	holds the list of spawned zones
-$races		= null;		//	keeps track of current race stuff
+require(__ROOT__."/src/engine/cycle.php");
+require(__ROOT__."/src/engine/player.php");
+require(__ROOT__."/src/engine/timer.php");
 
-//	directory of records
-$path = "/path/to/base/";
-$recordsDir = "records";
-$queueFile = "playerqueues.txt";
+require(__ROOT__."/src/tools/coord.php");
+require(__ROOT__."/src/tools/string.php");
 
-//	for respawing players
-$chances = 0;
+require(__ROOT__."/src/game/game.php");
+require(__ROOT__."/src/game/queue.php");
+require(__ROOT__."/src/game/race.php");
+require(__ROOT__."/src/game/records.php");
+require(__ROOT__."/src/game/rotation.php");
+require(__ROOT__."/src/game/zones.php");
 
-//	queueing values
-$queue_increase_time = 0;	//	should the queues each player increase depending on the time they play for in the server
-$queue_give = 4;			//	the amount of queues each player gets
-$queue_accesslevel = 2;		//	required access level to activate queue
+class Base
+{
+	//	class decleration variables
+	const $players 		= null;		//	holds the list of players in server
+	const $timer		= null;		//	timer of the game
+	const $records		= null;		//	holds the list of records of players
+	const $queuers		= null;		//	queuers and their list
+	const $rotation 	= null;		//	for rotation
+	const $zones		= null;		//	holds the list of spawned zones
+	const $races		= null;		//	keeps track of current race stuff
+	const $paths		= null;		//	stores the paths
 
-//	rotation items to load
-$rotations = array("config1.cfg", "config2.cfg");
-$rotation_type = 1;			//	0-no rotation, 1-per round, 2-per match
-$rotation_load = 0;			//	0-INCLUDE, 1-SINCLUDE, 3-RINCLUDE
-$rotation_current = "";		//	usually contains the currently loaded rotation item
+	//	directory of records
+	const $path 		= "/path/to/base/";
+	const $recordsDir 	= "records";
+	const $queueFile 	= "playerqueues.txt";
 
-//	zone settings
-$zonesCollapseAfterFinish = false;
+	//	for respawing players
+	const $chances = 0;
 
-//	race settings
-$countdown = true;
-$countdownMax = 60;
-$smartTimer = true;
-$countdown_ = -1;
+	//	queueing values
+	const $queue_increase_time = 0;	//	should the queues each player increase depending on the time they play for in the server
+	const $queue_give = 4;			//	the amount of queues each player gets
+	const $queue_accesslevel = 2;		//	required access level to activate queue
+
+	//	rotation items to load
+	const $rotations = array("config1.cfg", "config2.cfg");
+	const $rotation_type = 1;			//	0-no rotation, 1-per round, 2-per match
+	const $rotation_load = 0;			//	0-INCLUDE, 1-SINCLUDE, 3-RINCLUDE
+	const $rotation_current = "";		//	usually contains the currently loaded rotation item
+
+	//	zone settings
+	const $zonesCollapseAfterFinish = false;
+
+	//	race settings
+	const $countdown = true;
+	const $countdownMax = 60;
+	const $smartTimer = true;
+	const $countdown_ = -1;
+	
+	//	functions are listed below
+	function cycleCreated($name, $x, $y, $xdir, $ydir)
+	{
+		
+		$player = $this->getPlayer($name);
+		
+		if ($player)
+		{
+			$cycle = new Cycle;
+			
+			if ($cycle)
+			{
+				$cycle->isAlive = true;
+				$cycle->spawn_pos = new Coord($x, $y);
+				$cycle->spawn_dir = new Coord($xdir, $ydir);
+				$cycle->chances = $chances;
+				$cycle->player = $player->name;
+				
+				$player->cycle = $cycle;
+			}
+		}
+	}
+
+	function cycleDestroyed($name)
+	{
+		
+		$player = $this->getPlayer($name);
+		
+		if ($player)
+		{
+			$cycle = $player->cycle;
+			
+			if ($cycle)
+			{
+				$cycle->deathTime = $this->timer->GameTimer();
+				$cycle->isAlive = false;
+				
+				//	check if chances are enabled
+				//	also check if players have enough chances to be respawned
+				if (($this->chances > 0) && ($cycle->chances > 0))
+					respawnCycle($cycle);
+			}		
+		}
+	}
+	function respawnCycle($cycle)
+	{
+		
+		
+		if (($this->chances > 0) && ($cycle->chances > 0))
+		{
+			echo "RESPAWN_PLAYER ".$player->name." ".$cycle->spawn_pos->x." ".$cycle->spawn_pos->y." ".$cycle->spawn_dir->x." ".$cycle->spawn_dir->y."\n";
+			echo "CUSTOM_PLAYER_MESSAGE ".$player->name." racing_respawn_limit ".$cycle->chances."\n";
+			
+			$cycle->isAlive = true;
+			$cycle->chances--;
+		}
+	}
+	
+	function playerExists($name)
+	{
+		
+		if (count($this->players) > 0)
+		{
+			foreach($this->players as $p)
+			{
+				if ($p->name == $name)
+					return true;
+			}
+		}
+		return false;
+	}
+
+	function getPlayer($name)
+	{
+		
+		if (count($this->players) > 0)
+		{
+			foreach($this->players as $p)
+			{
+				if ($p->name == $name)
+					return $p;
+			}
+		}
+		return false;
+	}
+
+
+	function playerEntered($name, $screenName $human)
+	{
+		
+		if (!playerExists($name))
+		{
+			$player = new Player($name);
+			
+			if ($player)
+			{
+				$player->isHuman = $human;
+				$player->screen_name = $screenName;
+				
+				$record = $this->getRecord($name);
+				if ($record && $human)
+					$player->record = $record;
+					
+				$queuer = $this->getQueuer($name);
+				if ($queuer && $human)
+					$player->queuer = $queuer;
+				
+				$this->players[] = $player;
+			}
+		}
+		else
+		{
+			$player = getPlayer($name);
+			if ($player)
+			{
+				$player->isHuman = $human;
+				$player->screen_name = $screenName;
+				
+				$record = $this->getRecord($name);
+				if ($record && $human)
+					$player->record = $record;
+					
+				$queuer = $this->getQueuer($name);
+				if ($queuer && $human)
+					$player->queuer = $queuer;
+			}
+		}
+	}
+	function playerRenamed($old, $new, $screenName)
+	{
+		$player = $this->getPlayer($old);
+		
+		if ($player)
+		{
+			$player->name = $new;
+			$player->screen_name = $screenName;
+			
+			//	fetch records and queues related to the new name
+			//	this is due to people hacking into other accounts
+			
+			$record = $this->getRecord($name);
+			if ($record && $human)
+				$player->record = $record;
+			else
+				$player->record = null;
+				
+			$queuer = $this->getQueuer($name);
+			if ($queuer && $human)
+				$player->queuer = $queuer;
+			else
+				$player->queuer = null;
+		}
+	}
+	function playerLeft($name)
+	{
+		if ($this->players > 0)
+		{
+			foreach ($this->players as $key => $p)
+			{
+				if ($p->name == $name)
+				{
+					//	remove player from the list
+					unlink($this->players[$key]);
+					break;
+				}
+			}
+		}
+	}
+	
+	function roundBegan()
+	{
+		$this->timer = new Timer;
+		$this->timer->Start();
+	}
+
+	function roundEnded()
+	{		
+		//	although the timer is stopped, game timer is still running until next round/match starts.
+		$this->timer->Stop();
+		
+		if ($this->zonesCollapseAfterFinish)
+		{
+			for($i = 0; $i < count($this->zones); $i++)
+			{
+				$zone = $this->zones[$i];
+				if ($zone)
+				{
+					echo "COLLAPSE_ZONE ".$zone->name."\n";
+				}
+				unlink($this->zones[$i]);
+				$i--;
+			}
+		}
+	}
+
+	function center($message)
+	{
+		echo "CENTER_MESSAGE ".$message."\n";
+	}
+	
+	function queuerExists($name)
+	{
+		
+		if (count($this->queuers) > 0)
+		{
+			foreach($this->queuers as $queuer)
+			{
+				if ($queuer->name == $name)
+					return true;
+			}
+		}
+		return false;
+	}
+
+	function getQueuer($name)
+	{
+		
+		if (count($this->queuers) > 0)
+		{
+			foreach($this->queuers as $queuer)
+			{
+				if ($queuer->name == $name)
+					return $queuer;
+			}
+		}
+		return false;
+	}
+
+	//	load the data onto the server
+	function LoadQueuers()
+	{
+		
+		
+		//	loading queuers
+		$queFilePath = $this->path.$this->queueFile;
+		if (file_exists($queFilePath))
+		{
+			$file = fopen($queFilePath, "r");
+			if (!empty($file))
+			{
+				while (!feof($file))
+				{
+					$line = fread($fopen);
+					if ($line != "")
+					{
+						$lineExt = explode(" ", $line);
+						$queuer = new Queuer($lineExt[0]);
+						
+						if ($queuer)
+						{
+							$queuer->amount = $lineExt[1];
+							
+							$this->queuers[] = $queuer;
+						}
+					}
+				}
+				
+				fclose($file);
+			}
+		}
+	}
+	
+	//	syncher for racing
+	function racesync()
+	{
+		
+		
+		$ais 	= 0;
+		$humans = 0;
+		$alive 	= 0;
+		
+		if (count($this->players) > 0)
+		{
+			foreach($this->players as $p)
+			{
+				if ($p)
+				{
+					if ($p->isHuman)
+						$humans++;
+					else
+						$ais++;
+					
+					$cycle = $p->cycle;
+					if ($cycle && $cycle->isAlive)
+						$alive++;
+				}
+			}
+		}
+		else return;
+		
+		if (($humans > 0) && ($alive == 1) && ($ais == 0) && $countdown)
+		{
+			if ($smartTimer)
+			{
+				//	TODO: code lader
+			}
+			else
+			{
+				if ($countdown_ == -1)
+					$countdown_ = $countdownMax + 1;
+				
+				$countdown_--;
+				
+				center("0xff7777".$countdown_."                    ");
+			}
+		}
+	}
+
+	//	player crossing the finish line
+	function crossLine($name)
+	{
+		
+	}
+	
+	function recordExists($name)
+	{
+		
+		if (count($this->records) > 0)
+		{
+			foreach($this->records as $record)
+			{
+				if ($record->name == $name)
+					return true;
+			}
+		}
+		return false;
+	}
+
+	function getRecord($name)
+	{
+		
+		if (count($this->records) > 0)
+		{
+			foreach($this->records as $record)
+			{
+				if ($record->name == $name)
+					return $record;
+			}
+		}
+		return false;
+	}
+
+	function LoadRecords($item)
+	{
+		if (count($this->records) > 0)
+			unlink($this->records);
+		
+		$fpath = $this->path.$this->recordsDir.$item;
+		if (file_exists($fpath))
+		{
+			$file = fopen($fpath, "r");
+			if (!empty($file))
+			{
+				$rank = 0;
+				while (!feof($file))
+				{
+					$rank++;
+					$line = fread($file);
+					if ($line != "")
+					{
+						$lineExt = explode(" ", $line);
+						$record = new Record($lineExt[0]);
+						
+						if ($record)
+						{
+							$record->time = $lineExt[1];
+							$record->rank = $rank;
+							
+							$this->records[] = $record;
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	function AddRotation()
+	{
+		
+		$this->rotation = new Rotation;
+		foreach($this->rotations as $item)
+		{
+			$this->rotation->items[] = $item;
+		}
+	}
+	
+	function zoneCreated($name, $x, $y)
+	{
+		
+		$zone = new Zone;
+		$zone->name = $name;
+		$zone->spawn_pos = new Coord($x, $y);
+		
+		$this->zones[] = $zone;
+	}
+}
 ?>

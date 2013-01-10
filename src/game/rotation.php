@@ -21,14 +21,4 @@ class Rotation
 		}
 	}
 };
-
-function AddRotation()
-{
-	global $rotations, $rotation;
-	$rotation = new Rotation;
-	foreach($rotations as $item)
-	{
-		$rotation->items[] = $item;
-	}
-}
 ?>
