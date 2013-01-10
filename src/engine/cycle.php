@@ -9,6 +9,9 @@ class Cycle
 	var $spawn_pos;
 	var $spawn_dir;
 	
+	var $pos;
+	var $dir;
+	
     var $isAlive = false;
 	var $deathTime = 0;
 	

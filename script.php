@@ -9,11 +9,8 @@ $ar = new Base;
 
 require(__ROOT__."/src/tools/string.php");
 
-LoadQueuers();
-AddRotation();
-
-$prv = round(microtime());
-$new = 0;
+$ar->LoadQueuers();
+$ar->AddRotation();
 
 while(1)
 {
@@ -75,13 +72,8 @@ while(1)
 		$ar->crossLine($lineExt[1]);
 	}
 
-	//	this little code is for synching every second
-	$new = round(microtime());
-	if (($new - $prv) == 1)
-	{
-		//	keep race in sync
-		$ar->racesync();
-		$prv = $new;
-	}
+	//	keep race in sync
+	$ar->racesync();
+	$prv = $new;
 }
 ?>

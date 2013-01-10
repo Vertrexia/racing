@@ -52,13 +52,32 @@ class Base
 	//	race settings
 	const $countdown = true;
 	const $countdownMax = 60;
-	const $smartTimer = true;
+	const $smartTimer = false;
 	const $countdown_ = -1;
+	
+	function center($message)
+	{
+		echo "CENTER_MESSAGE ".$message."\n";
+	}
+	
+	function con($message)
+	{
+		echo "CONSOLE_MESSAGE ".$message."\n";
+	}	
+	
+	function pm($player, $message)
+	{
+		echo "PLAYER_MESSAGE ".$message."\n";
+	}
+	
+	function cpm($player, $langauge_command, $params)
+	{
+		echo "CUSTOM_PLAYER_MESSAGE ".$player." ".$langauge_command." ".$params."\n";
+	}	
 	
 	//	functions are listed below
 	function cycleCreated($name, $x, $y, $xdir, $ydir)
-	{
-		
+	{		
 		$player = $this->getPlayer($name);
 		
 		if ($player)
@@ -79,8 +98,7 @@ class Base
 	}
 
 	function cycleDestroyed($name)
-	{
-		
+	{		
 		$player = $this->getPlayer($name);
 		
 		if ($player)
@@ -100,22 +118,35 @@ class Base
 		}
 	}
 	function respawnCycle($cycle)
-	{
-		
-		
+	{		
 		if (($this->chances > 0) && ($cycle->chances > 0))
 		{
 			echo "RESPAWN_PLAYER ".$player->name." ".$cycle->spawn_pos->x." ".$cycle->spawn_pos->y." ".$cycle->spawn_dir->x." ".$cycle->spawn_dir->y."\n";
-			echo "CUSTOM_PLAYER_MESSAGE ".$player->name." racing_respawn_limit ".$cycle->chances."\n";
+			$this->cpm($player->name,"racing_respawn_limit", $cycle->chances);
 			
 			$cycle->isAlive = true;
 			$cycle->chances--;
 		}
 	}
 	
+	function player_gridpos($name, $x, $y, $xdir, $ydir)
+	{
+		$player = $this->getPlayer($name);
+		if ($player)
+		{
+			$cycle = $player;
+			if ($cycle)
+			{
+				if (!$cycle->pos && !$cycle->dir)
+				{
+					$cycle->pos = Coord($x, $y);
+				}				
+			}
+		}
+	}
+	
 	function playerExists($name)
 	{
-		
 		if (count($this->players) > 0)
 		{
 			foreach($this->players as $p)
@@ -129,7 +160,6 @@ class Base
 
 	function getPlayer($name)
 	{
-		
 		if (count($this->players) > 0)
 		{
 			foreach($this->players as $p)
@@ -141,10 +171,8 @@ class Base
 		return false;
 	}
 
-
 	function playerEntered($name, $screenName $human)
 	{
-		
 		if (!playerExists($name))
 		{
 			$player = new Player($name);
@@ -217,7 +245,7 @@ class Base
 				if ($p->name == $name)
 				{
 					//	remove player from the list
-					unlink($this->players[$key]);
+					unset($this->players[$key]);
 					break;
 				}
 			}
@@ -228,6 +256,7 @@ class Base
 	{
 		$this->timer = new Timer;
 		$this->timer->Start();
+		unset(this->races);
 	}
 
 	function roundEnded()
@@ -244,20 +273,14 @@ class Base
 				{
 					echo "COLLAPSE_ZONE ".$zone->name."\n";
 				}
-				unlink($this->zones[$i]);
+				unset($this->zones[$i]);
 				$i--;
 			}
 		}
 	}
-
-	function center($message)
-	{
-		echo "CENTER_MESSAGE ".$message."\n";
-	}
 	
 	function queuerExists($name)
 	{
-		
 		if (count($this->queuers) > 0)
 		{
 			foreach($this->queuers as $queuer)
@@ -271,7 +294,6 @@ class Base
 
 	function getQueuer($name)
 	{
-		
 		if (count($this->queuers) > 0)
 		{
 			foreach($this->queuers as $queuer)
@@ -286,8 +308,6 @@ class Base
 	//	load the data onto the server
 	function LoadQueuers()
 	{
-		
-		
 		//	loading queuers
 		$queFilePath = $this->path.$this->queueFile;
 		if (file_exists($queFilePath))
@@ -315,58 +335,6 @@ class Base
 				fclose($file);
 			}
 		}
-	}
-	
-	//	syncher for racing
-	function racesync()
-	{
-		
-		
-		$ais 	= 0;
-		$humans = 0;
-		$alive 	= 0;
-		
-		if (count($this->players) > 0)
-		{
-			foreach($this->players as $p)
-			{
-				if ($p)
-				{
-					if ($p->isHuman)
-						$humans++;
-					else
-						$ais++;
-					
-					$cycle = $p->cycle;
-					if ($cycle && $cycle->isAlive)
-						$alive++;
-				}
-			}
-		}
-		else return;
-		
-		if (($humans > 0) && ($alive == 1) && ($ais == 0) && $countdown)
-		{
-			if ($smartTimer)
-			{
-				//	TODO: code lader
-			}
-			else
-			{
-				if ($countdown_ == -1)
-					$countdown_ = $countdownMax + 1;
-				
-				$countdown_--;
-				
-				center("0xff7777".$countdown_."                    ");
-			}
-		}
-	}
-
-	//	player crossing the finish line
-	function crossLine($name)
-	{
-		
 	}
 	
 	function recordExists($name)
@@ -400,7 +368,7 @@ class Base
 	function LoadRecords($item)
 	{
 		if (count($this->records) > 0)
-			unlink($this->records);
+			unset($this->records);
 		
 		$fpath = $this->path.$this->recordsDir.$item;
 		if (file_exists($fpath))
@@ -449,6 +417,63 @@ class Base
 		$zone->spawn_pos = new Coord($x, $y);
 		
 		$this->zones[] = $zone;
+	}
+
+	//	syncher for racing
+	function racesync()
+	{
+		$ais 	= 0;
+		$humans = 0;
+		$alive 	= 0;
+		
+		if (count($this->players) > 0)
+		{
+			foreach($this->players as $p)
+			{
+				if ($p)
+				{
+					if ($p->isHuman)
+						$humans++;
+					else
+						$ais++;
+					
+					$cycle = $p->cycle;
+					if ($cycle && $cycle->isAlive)
+						$alive++;
+				}
+			}
+		}
+		else return;
+		
+		if (($humans > 0) && ($alive == 1) && ($ais == 0) && $countdown)
+		{
+			if ($smartTimer)
+			{
+				//	TODO: code lader
+			}
+			else
+			{
+				if ($countdown_ == -1)
+					$countdown_ = $countdownMax + 1;
+				
+				$countdown_--;
+				
+				center("0xff7777".$countdown_."                    ");
+			}
+		}
+	}
+
+	//	player crossing the finish line
+	function crossLine($name)
+	{
+		$rPlayer = new Race;
+		if ($rPlayer)
+		{
+			$rPlayer->name = $name;
+			$rPlayer->time = $this->timer->GameTimer();
+			
+			$this->races[] = $rPlayer;
+		}
 	}
 }
 ?>
