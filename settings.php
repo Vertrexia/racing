@@ -9,7 +9,6 @@ require(__ROOT__."/src/engine/timer.php");
 require(__ROOT__."/src/tools/coord.php");
 require(__ROOT__."/src/tools/string.php");
 
-require(__ROOT__."/src/game/game.php");
 require(__ROOT__."/src/game/queue.php");
 require(__ROOT__."/src/game/race.php");
 require(__ROOT__."/src/game/records.php");
