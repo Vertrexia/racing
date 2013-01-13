@@ -15,6 +15,7 @@ class Player
     var $queuer;
 
     var $isHuman;
+    var $access_level = 20;
 
     function __construct($name)
     {
@@ -30,11 +31,12 @@ class Player
     function playerExists($name)
     {
         global $ar;
-        if (!empty($ar->players)) {
-            foreach ($ar->players as $p) {
-                if ($p->name == $name) {
+        if (count($ar->players) > 0)
+        {
+            foreach ($ar->players as $p)
+            {
+                if ($p->name == $name)
                     return true;
-                }
             }
             return false;
         }
@@ -43,11 +45,12 @@ class Player
     function getPlayer($name)
     {
         global $ar;
-        if (!empty($ar->players)) {
-            foreach ($ar->players as $p) {
-                if (contains($p->name, $name)) {
+        if (count($ar->players) > 0)
+        {
+            foreach ($ar->players as $p)
+            {
+                if (contains($p->name, $name))
                     return $p;
-                }
             }
         }
         return false;
@@ -56,40 +59,63 @@ class Player
     function playerEntered($name, $screenName, $human)
     {
         global $ar;
-        if (!$this->playerExists($name)) {
+        if (!$this->playerExists($name))
+        {
             $player = new Player($name);
 
-            if ($player) {
+            if ($player)
+            {
                 $player->isHuman = $human;
                 $player->screen_name = $screenName;
 
                 $record = $ar->r->getRecord($name);
-                if ($record && $human) {
+                if ($record && $human)
                     $player->record = $record;
-                }
 
                 $queuer = $ar->q->getQueuer($name);
-                if ($queuer && $human) {
+                if ($queuer && $human)
                     $player->queuer = $queuer;
+                elseif (!$queuer && $human)
+                {
+                    $queuer = new Queuer($player->name);
+                    if ($queuer)
+                    {
+                        $queuer->amount = $ar->queue_give;
+                        $ar->queuers[] = $queuer;
+                    }
                 }
+                else
+                     $player->queuer = null;
 
                 $ar->players[] = $player;
             }
-        } else {
+        }
+        else
+        {
             $player = $this->getPlayer($name);
-            if ($player) {
+            if ($player)
+            {
                 $player->isHuman = $human;
                 $player->screen_name = $screenName;
 
                 $record = $ar->r->getRecord($name);
-                if ($record && $human) {
+                if ($record && $human)
                     $player->record = $record;
-                }
 
                 $queuer = $ar->q->getQueuer($name);
-                if ($queuer && $human) {
+                if ($queuer && $human)
                     $player->queuer = $queuer;
+                elseif (!$queuer && $human)
+                {
+                    $queuer = new Queuer($player->name);
+                    if ($queuer)
+                    {
+                        $queuer->amount = $ar->queue_give;
+                        $ar->queuers[] = $queuer;
+                    }
                 }
+                else
+                     $player->queuer = null;                
             }
         }
     }
@@ -99,7 +125,8 @@ class Player
         global $ar;
         $player = $this->getPlayer($old);
 
-        if ($player) {
+        if ($player)
+        {
             $player->name = $new;
             $player->screen_name = $screenName;
 
@@ -107,27 +134,37 @@ class Player
             //	this is due to people hacking into other accounts
 
             $record = $ar->r->getRecord($name);
-            if ($record && $player->isHuman) {
+            if ($record && $player->isHuman)
                 $player->record = $record;
-            } else {
+            else
                 $player->record = null;
-            }
 
             $queuer = $ar->q->getQueuer($name);
-            if ($queuer && $player->isHuman) {
+            if ($queuer && $player->isHuman)
                 $player->queuer = $queuer;
-            } else {
-                $player->queuer = null;
+            elseif (!$queuer && $human)
+            {
+                $queuer = new Queuer($player->name);
+                if ($queuer)
+                {
+                    $queuer->amount = $ar->queue_give;
+                    $ar->queuers[] = $queuer;
+                }
             }
+            else
+                $player->queuer = null;
         }
     }
 
     function playerLeft($name)
     {
         global $ar;
-        if (!empty($ar->players)) {
-            foreach ($ar->players as $key => $p) {
-                if ($p->name == $name) {
+        if (count($ar->players) > 0)
+        {
+            foreach ($ar->players as $key => $p)
+            {
+                if ($p->name == $name)
+                {
                     //	remove player from the list
                     $p->Delete();
                     unset($ar->players[$key]);

@@ -17,9 +17,12 @@ class Queuer
     function queuerexists($name)
     {
         global $ar;
-        if (!empty($ar->queuers)) {
-            foreach ($ar->queuers as $queuer) {
-                if ($queuer->name == $name) {
+        if (count($ar->queuers) > 0)
+        {
+            foreach ($ar->queuers as $queuer)
+            {
+                if ($queuer->name == $name)
+                {
                     return true;
                 }
             }
@@ -27,11 +30,15 @@ class Queuer
         return false;
     }
 
-    function getQueuer($name) {
+    function getQueuer($name)
+    {
         global $ar;
-        if (!empty($ar->queuers)) {
-            foreach ($ar->queuers as $queuer) {
-                if ($queuer->name == $name) {
+        if (count($ar->queuers) > 0)
+        {
+            foreach ($ar->queuers as $queuer)
+            {
+                if ($queuer->name == $name)
+                {
                     return $queuer;
                 }
             }
@@ -49,16 +56,21 @@ class Queuer
 
         //	using addslashes() function to ensure no bugs with reading path
         $queFilePath = addslashes($queFilePath);
-        if (file_exists($queFilePath)) {
+        if (file_exists($queFilePath))
+        {
             $file = fopen($queFilePath, "r");
-            if (!empty($file)) {
-                while (!feof($file)) {
+            if ($file)
+            {
+                while (!feof($file))
+                {
                     $line = fread($fopen);
-                    if ($line != "") {
+                    if ($line != "")
+                    {
                         $lineExt = explode(" ", $line);
                         $queuer = new Queuer($lineExt[0]);
 
-                        if ($queuer) {
+                        if ($queuer)
+                        {
                             $queuer->amount = $lineExt[1];
 
                             $ar->queuers[] = $queuer;
@@ -80,10 +92,14 @@ class Queuer
         //	using addslashes() function to ensure no bugs with reading path
         $queFilePath = addslashes($queFilePath);
         $file = fopen($queFilePath, "w+");
-        if (!empty($file)) {
-            if (!empty($ar->queuers)) {
-                foreach ($ar->queuers as $queuer) {
-                    if ($queuer) {
+        if ($file)
+        {
+            if (count($ar->queuers) > 0)
+            {
+                foreach ($ar->queuers as $queuer)
+                {
+                    if ($queuer)
+                    {
                         fwrite($file, $queuer->name." ".$queuer->amount."\n");
                     }
                 }

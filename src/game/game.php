@@ -1,5 +1,4 @@
 <?php
-<?php
 if (!defined("__ROOT__")) {
     return;
 }
@@ -23,14 +22,38 @@ class Game
         echo "PLAYER_MESSAGE ".$message."\n";
     }
 
-    function cpm($player, $langauge_command, $params)
+    //  custom player message - sends a custom message to that selected player (if they exist)
+    //  $langauge_command is the langauge string command in language files to load
+    function cpm($player, $langauge_command, $params = array())
     {
-        echo "CUSTOM_PLAYER_MESSAGE ".$player." ".$langauge_command." ".$params."\n";
+        if (count($params) == 0)
+            echo "CUSTOM_PLAYER_MESSAGE ".$player." ".$langauge_command."\n";
+        else
+        {
+            $extras = "";
+            foreach($params as $param)
+            {
+                $extras .= $param." ";
+            }
+            echo "CUSTOM_PLAYER_MESSAGE ".$player." ".$langauge_command." ".$extras."\n";
+        }
     }
 
-    function cm($langauge_command, $params)
+    //  custom message - sends a custom message to all clients, public message to simplify
+    //  $langauge_command is the langauge string command in language files to load
+    function cm($langauge_command, $params = array())
     {
-        echo "CUSTOM_MESSAGE ".$langauge_command." ".$params."\n";
+        if (count($params) == 0)
+            echo "CUSTOM_MESSAGE ".$player." ".$langauge_command."\n";
+        else
+        {
+            $extras = "";
+            foreach($params as $param)
+            {
+                $extras .= $param." ";
+            }
+            echo "CUSTOM_MESSAGE ".$player." ".$langauge_command." ".$extras."\n";
+        }
     }
 
     function roundBegan()
@@ -41,6 +64,7 @@ class Game
 
         //	clear all previous race data
         unset($ar->races);
+        $ar->races = array();
         $ar->firstTime_ = -1;
         $ar->countdown_ = -1;
         $ar->finishRank = 1;
@@ -56,10 +80,13 @@ class Game
         $ar->timer->stop();
         $this->roundFinished = true;
 
-        if ($ar->zonesCollapseAfterFinish) {
-            for ($i = 0; $i < count($ar->zones); $i++) {
+        if ($ar->zonesCollapseAfterFinish)
+        {
+            for ($i = 0; $i < count($ar->zones); $i++)
+            {
                 $zone = $ar->zones[$i];
-                if ($zone) {
+                if ($zone)
+                {
                     echo "COLLAPSE_ZONE ".$zone->name."\n";
 
                     unset($ar->zones[$i]);
@@ -67,6 +94,14 @@ class Game
                 }
             }
         }
+        
+        //  save the records
+        $ar->r->saveRecords();
+        $ar->q->saveQueuers();
+        
+        //  reset done for rotation per round
+        if ($ar->rotation_type == 1)
+            $ar->rotation->done = false;
     }
 
     function respawnPlayer($name, $x, $y, $xdir, $ydir)
@@ -77,6 +112,11 @@ class Game
     function killPlayer($name)
     {
         echo "KILL ".$name."\n";
+    }
+    
+    function declareRoundWinner($name)
+    {
+        echo "DECLARE_ROUND_WINNER ".$name."\n";
     }
 }
 ?>

@@ -18,7 +18,8 @@ class Timer
 
     function stop()
     {
-        if ($this->$isRunning) {
+        if ($this->isRunning)
+        {
             $this->stop = round(microtime(), 4);
             $this->isRunning = false;
         }
@@ -33,7 +34,8 @@ class Timer
     //	gets how long round lasted
     function elapsed()
     {
-        if (!$this->isRunning) {
+        if (!$this->isRunning)
+        {
             $elapsed_ = $this->stop - $this->start;
             return ($elapsed_ - 4);
         }

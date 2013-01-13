@@ -2,12 +2,7 @@ File: script.php
   * Complete code for:
     + INVALID_COMMAND
     
-  * Add code for:
-    + DEATH_SUICIDE
-    + DEATH_FRAG (due to lag and glitch)
-    
 File: race.php
-  * Code for: crossLine($name)
   * Code for: smartTimer  
   * Add:
     $score_deplete
