@@ -27,10 +27,11 @@ class Base
     var $zones		= array();		//	holds the list of spawned zones
     var $races		= array();		//	keeps track of current race stuff
 
-    //	directory of records
-    var $path 			= __ROOT__;
-    var $recordsDir 	= "/data/records/";
-    var $queueFile 		= "/data/playerqueues.txt";
+    //	directory of data files
+    var $path            = __ROOT__;                    //  root directory where data is stored
+    var $recordsDir      = "/data/records/";            //  location were the records are saved and loaded from
+    var $queueFile       = "/data/playerqueues.txt";    //  the player's queue data
+    var $rotationFile    = "/data/rotation.txt";        //  the list of rotation stuff that needs to be done
 
     //	cycle settings
     var $chances = 0;					//	number of times players can be respawned per round
@@ -46,7 +47,6 @@ class Base
     var $queue_copies = false;          //  should queueing allow copies of different configs?
 
     //	rotation items to load
-    var $rotations = array("config1.cfg", "config2.cfg");
     var $rotation_type = 1;			//	0-no rotation, 1-per round, 2-per match
     var $rotation_load = 0;			//	0-INCLUDE, 1-SINCLUDE, 3-RINCLUDE
     var $rotation_current = "";		//	usually contains the currently loaded rotation item

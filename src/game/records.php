@@ -66,6 +66,13 @@ class Record
                 $pRecord->time = $time;
             }
             $set = false;
+            
+            if (count($strRecords) == 0)
+            {
+                $ar->records[] = $pRecord;
+                $ar->game->cpm($pRecord->screen_name, "race_personal_record", array($pRecord->time));
+                return;
+            }
 
             //	clear current list
             unset($ar->records);

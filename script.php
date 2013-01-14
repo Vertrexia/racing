@@ -10,7 +10,7 @@ $ar = new Base;
 $ar->init();
 
 $ar->q->loadQueuers();
-$ar->rotation->addRotation();
+$ar->rotation->init();
 
 $ar->race_prv_sync = $ar->timer->gametimer();
 
@@ -107,7 +107,7 @@ while (1)
             {
                 if ($ar->rotation_load == 0)
                 {
-                    echo "INCLIDE ".$item."\n";
+                    echo "INCLUDE ".$item."\n";
                 }
                 elseif ($ar->rotation_load == 1)
                 {
@@ -160,6 +160,25 @@ while (1)
     {
         $lineExt = explode(" ", $line);
         $ar->z->zoneCreated($lineExt[2], $lineExt[3], $lineExt[4]);
+    }
+    elseif (startswith($line, "ONLINE_PLAYER"))
+    {
+        $lineExt = explode(" ", $line);
+        $player = $ar->p->getPlayer($lineExt[1]);
+        if ($player)
+        {
+            $player->access_level = $lineExt[5];
+        }
+    }
+    elseif (startswith($line, "PLAYER_COLORED_NAME"))
+    {
+        $lineExt = explode(" ", $line);
+        $player = $ar->p->getPlayer($lineExt[1]);
+        if ($player)
+        {
+            $color_name = substr($line, strlen($lineExt[0]) + strlen($lineExt[1]) + 2);
+            $player->color_name = $color_name;
+        }
     }
 
     //	keep race in sync

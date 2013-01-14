@@ -13,6 +13,13 @@ class Rotation
     function rotate()
     {
         global $ar;
+        
+        //  make sure there are items in the rotation bank to rotate
+        if (count($this->items) == 0)
+        {
+            $ar->game->con("There are no items in the rotation bank to perform any rotation actions.");
+            return;
+        }
 
         if ($this->itemKey >= count($this->items))
         {
@@ -26,7 +33,7 @@ class Rotation
 
             if ($ar->rotation_load == 0)
             {
-                echo "INCLIDE ".$this->item."\n";
+                echo "INCLUDE ".$this->item."\n";
             }
             elseif ($ar->rotation_load == 1)
             {
@@ -44,12 +51,30 @@ class Rotation
         }
     }
 
-    function addRotation()
+    function init()
     {
         global $ar;
-        foreach ($ar->rotations as $item)
+        
+        if ((count($this->items) > 0))
         {
-            $this->items[] = $item;
+            unset($this->items);
+            $this->items = array();
+        }
+        
+        $rotFile = $ar->path.$ar->rotationFile;
+        if (file_exists($rotFile))
+        {
+            $contents = file_get_contents($rotFile);
+            $contents = explode("\n");
+            
+            if (!empty($contents) && (count($contents) > 0))
+            {
+                foreach($contents as $item)
+                {
+                    if ($item != "")
+                        $this->items[] = $item;
+                }
+            }
         }
     }
 }

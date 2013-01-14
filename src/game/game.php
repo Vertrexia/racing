@@ -95,7 +95,7 @@ class Game
             }
         }
         
-        //  save the records
+        //  save the collected information
         $ar->r->saveRecords();
         $ar->q->saveQueuers();
         

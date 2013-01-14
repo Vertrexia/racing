@@ -7,7 +7,7 @@ class Queuer
 {
     var $name;
     var $amount;
-    var $list;
+    var $current;
 
     function __construct($name)
     {
@@ -71,8 +71,9 @@ class Queuer
 
                         if ($queuer)
                         {
-                            $queuer->amount = $lineExt[1];
-
+                            $queuer->amount = $lineExt[2];
+                            $queuer->current = $lineExt[1];
+                            
                             $ar->queuers[] = $queuer;
                         }
                     }
@@ -100,7 +101,7 @@ class Queuer
                 {
                     if ($queuer)
                     {
-                        fwrite($file, $queuer->name." ".$queuer->amount."\n");
+                        fwrite($file, $queuer->name." ".$queuer->current." ".$queuer->amount."\n");
                     }
                 }
             }

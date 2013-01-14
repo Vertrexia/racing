@@ -8,13 +8,14 @@ class Player
     //	personal info
     var $name;
     var $screen_name;
+    var $color_name;
 
     //	server info
     var $cycle;
     var $records;
     var $queuer;
 
-    var $isHuman;
+    var $isHuman = false;
     var $access_level = 20;
 
     function __construct($name)
